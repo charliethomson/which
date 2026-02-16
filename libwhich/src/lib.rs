@@ -1,7 +1,5 @@
 use std::path::PathBuf;
 
-pub use crate::util::is_valid_executable;
-
 mod error;
 mod util;
 
@@ -12,6 +10,7 @@ const ENV_SUPPRESS_WARNINGS_KEY: &str = "LIBWHICH_SUPPRESS_WARNINGS";
 mod tests;
 
 pub use crate::error::WhichError;
+pub use crate::util::{is_valid_executable, is_valid_executable_split};
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "debug", skip_all, fields(name_count = names.len())))]
 pub fn which<S: AsRef<str>>(names: &[S]) -> Result<impl Iterator<Item = PathBuf>, WhichError> {
@@ -39,5 +38,5 @@ pub fn which<S: AsRef<str>>(names: &[S]) -> Result<impl Iterator<Item = PathBuf>
 
     Ok(sets
         .into_iter()
-        .filter_map(|(path, name)| is_valid_executable(&path, &name)))
+        .filter_map(|(path, name)| is_valid_executable_split(&path, &name)))
 }

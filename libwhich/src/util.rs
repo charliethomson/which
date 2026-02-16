@@ -12,14 +12,20 @@ pub fn extract_search_paths() -> Result<Vec<PathBuf>, WhichError> {
     Ok(paths)
 }
 
-#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", fields(path = %path.display())))]
-pub fn is_valid_executable(path: &Path, name: &str) -> Option<PathBuf> {
-    let path = path.join(name).canonicalize().ok()?;
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", fields(path = %path.as_ref().display(), name = %name.as_ref().display())))]
+pub fn is_valid_executable_split<P1: AsRef<Path>, P2: AsRef<Path>>(
+    path: P1,
+    name: P2,
+) -> Option<PathBuf> {
+    is_valid_executable(path.as_ref().join(name.as_ref()).canonicalize().ok()?)
+}
 
-    if is_valid_executable_impl(&path) {
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", fields(path = %path.as_ref().display())))]
+pub fn is_valid_executable<P: AsRef<Path>>(path: P) -> Option<PathBuf> {
+    if is_valid_executable_impl(&path.as_ref().to_path_buf()) {
         #[cfg(feature = "tracing")]
-        tracing::debug!(path = %path.display(), "found");
-        Some(path)
+        tracing::debug!(path = %path.as_ref().display(), "found");
+        Some(path.as_ref().to_path_buf())
     } else {
         None
     }
