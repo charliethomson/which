@@ -1,7 +1,7 @@
 [workspace]
 resolver='2'
 package.edition="2024"
-package.version = "0.1.2"
+package.version = "0.1.3"
 
 members = [
     "libwhich", "which",
@@ -10,6 +10,7 @@ members = [
 [workspace.dependencies]
 tracing = "0.1"
 serde = { version = "1.0", features = ["derive"] }
+valuable = { version = "0.1", features = ["derive"] }
 
 libwhich = { path = "./libwhich" }
 
