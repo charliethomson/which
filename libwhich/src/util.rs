@@ -13,10 +13,10 @@ pub fn extract_search_paths() -> Result<Vec<PathBuf>, WhichError> {
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", fields(path = %path.display())))]
-pub fn is_correct(path: &Path, name: &str) -> Option<PathBuf> {
+pub fn is_valid_executable(path: &Path, name: &str) -> Option<PathBuf> {
     let path = path.join(name).canonicalize().ok()?;
 
-    if is_correct_impl(&path) {
+    if is_valid_executable_impl(&path) {
         #[cfg(feature = "tracing")]
         tracing::debug!(path = %path.display(), "found");
         Some(path)
@@ -26,7 +26,7 @@ pub fn is_correct(path: &Path, name: &str) -> Option<PathBuf> {
 }
 
 #[cfg(target_os = "windows")]
-fn is_correct_impl(path: &Path) -> bool {
+fn is_valid_executable_impl(path: &Path) -> bool {
     if !std::env::var(crate::ENV_SUPPRESS_WARNINGS_KEY).is_ok() {
         eprintln!("[!] Windows validation is not yet supported, incorrect results may appear");
     }
@@ -34,7 +34,7 @@ fn is_correct_impl(path: &Path) -> bool {
 }
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
-fn is_correct_impl(path: &Path) -> bool {
+fn is_valid_executable_impl(path: &Path) -> bool {
     let Ok(metadata) = std::fs::metadata(path) else {
         return false;
     };

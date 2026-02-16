@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::util::is_correct;
+pub use crate::util::is_valid_executable;
 
 mod error;
 mod util;
@@ -39,5 +39,5 @@ pub fn which<S: AsRef<str>>(names: &[S]) -> Result<impl Iterator<Item = PathBuf>
 
     Ok(sets
         .into_iter()
-        .filter_map(|(path, name)| is_correct(&path, &name)))
+        .filter_map(|(path, name)| is_valid_executable(&path, &name)))
 }
