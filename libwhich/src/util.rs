@@ -13,7 +13,7 @@ pub fn extract_search_paths() -> Result<Vec<PathBuf>, WhichError> {
 }
 
 #[cfg_attr(feature = "tracing", tracing::instrument(level = "trace", fields(path = %path.display())))]
-pub fn is_correct(path: &PathBuf, name: &str) -> Option<PathBuf> {
+pub fn is_correct(path: &Path, name: &str) -> Option<PathBuf> {
     let path = path.join(name).canonicalize().ok()?;
 
     if is_correct_impl(&path) {
@@ -60,5 +60,5 @@ fn is_correct_impl(path: &Path) -> bool {
         }
     }
 
-    return true;
+    true
 }
