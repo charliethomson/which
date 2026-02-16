@@ -4,16 +4,22 @@ use clap::Parser;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::EnvFilter;
 
+/// Locate executables on PATH
 #[derive(Parser)]
 struct Args {
+    /// Exit with 0 if found, 1 if not; suppress all output
     #[arg(short)]
     silent: bool,
+    /// Print all matches, not just the first
     #[arg(short)]
     all: bool,
+    /// Print at most N matches (ignored with -a)
     #[arg(short)]
     limit: Option<usize>,
+    /// Enable debug tracing on stderr
     #[arg(short, long)]
     verbose: bool,
+    /// Command names to look up
     names: Vec<String>,
 }
 
