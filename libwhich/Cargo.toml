@@ -8,6 +8,8 @@ libc = { version = "0.2", optional = true }
 thiserror = "2.0.18"
 tracing = { workspace = true, optional = true }
 
+[dev-dependencies]
+tempfile = "3"
 
 [lints]
 workspace = true

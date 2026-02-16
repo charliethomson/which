@@ -8,7 +8,12 @@ mod util;
 #[allow(unused)]
 const ENV_SUPPRESS_WARNINGS_KEY: &str = "LIBWHICH_SUPPRESS_WARNINGS";
 
+#[cfg(test)]
+mod tests;
+
 pub use crate::error::WhichError;
+
+#[cfg_attr(feature = "tracing", tracing::instrument(level = "debug", skip_all, fields(name_count = names.len())))]
 pub fn which<S: AsRef<str>>(names: &[S]) -> Result<impl Iterator<Item = PathBuf>, WhichError> {
     let paths = util::extract_search_paths()?;
 

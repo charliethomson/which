@@ -8,8 +8,10 @@ members = [
 ]
 
 [workspace.dependencies]
-tracing = { version = "0.1", features = ["valuable"] }
+tracing = "0.1"
 serde = { version = "1.0", features = ["derive"] }
+
+libwhich = { path = "./libwhich" }
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = 0 }

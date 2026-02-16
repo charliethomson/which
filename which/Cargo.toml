@@ -6,7 +6,8 @@ version.workspace = true
 [dependencies]
 anyhow = "1.0.101"
 clap = { version = "4.5.58", features = ["derive", "env"] }
-libwhich = { version = "0.1.3", path = "../libwhich" }
+libwhich = { workspace = true, features = ["tracing"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [lints]
 workspace = true

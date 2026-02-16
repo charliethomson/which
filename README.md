@@ -1,107 +1,63 @@
-# libffmpeg
+# libwhich
 
-Wrapper crate for ffmpeg, or any other command, async first, built on tokio, with tracing.
+A Rust library and CLI for locating executables on `$PATH`, inspired by the FreeBSD `which(1)` implementation.
 
-## Features
+## Workspace
 
-- Async command execution with `tokio`
-- Built-in cancellation support via `CancellationToken`
-- Progress monitoring for long-running ffmpeg operations
-- Tracing integration for observability
-- Generic command runner that works with any CLI tool
+- **`libwhich`** - Core library crate
+- **`which`** - CLI binary
 
-## Installation
+## Library Usage
 
 ```toml
 [dependencies]
-libffmpeg = { git = "https://github.com/charliethomson/libffmpeg" }
+libwhich = { git = "https://github.com/charliethomson/libwhich" }
 ```
-
-## Usage
-
-### Environment Variables
-
-Both `ffmpeg` and `duration` modules use `find_binary_env()` to locate binaries. Set these if ffmpeg/ffprobe aren't on your `$PATH`:
-
-- `LIBFFMPEG_FFMPEG_PATH` - path to ffmpeg binary
-- `LIBFFMPEG_FFPROBE_PATH` - path to ffprobe binary
-
-```bash
-export LIBFFMPEG_FFMPEG_PATH=/opt/homebrew/bin/ffmpeg
-export LIBFFMPEG_FFPROBE_PATH=/opt/homebrew/bin/ffprobe
-```
-
-`find_binary_env()` checks the env var first, validates it (exists, executable), then falls back to searching `$PATH`.
-
-### Setup
-Copy `.cargo/config.toml` into your workspace, `tracing` [still](https://github.com/tokio-rs/tracing/discussions/1906) hasnt made `valuable` support stable :/
-
-#### with curl
-```bash
-mkdir -p .cargo && curl https://raw.githubusercontent.com/charliethomson/ffrenc/refs/heads/main/.cargo/config.toml > .cargo/config.toml
-```
-
-#### with wget
-```bash
-mkdir -p .cargo && wget https://raw.githubusercontent.com/charliethomson/ffrenc/refs/heads/main/.cargo/config.toml -O .cargo/config.toml
-```
-
-### Basic ffmpeg execution
 
 ```rust
-use libffmpeg::ffmpeg::ffmpeg;
-use tokio_util::sync::CancellationToken;
+use libwhich::which;
 
-let token = CancellationToken::new();
-let result = ffmpeg(token, |cmd| {
-    cmd.arg("-i").arg("input.mp4")
-       .arg("-c:v").arg("libx264")
-       .arg("output.mp4");
-}).await?;
+// Find one or more binaries by name
+let results: Vec<_> = which(&["ls", "cat"]).unwrap().collect();
+for path in results {
+    println!("{}", path.display());
+}
 ```
 
-### With progress monitoring
-[real example](https://github.com/charliethomson/ffrenc/blob/main/src/tasks.rs#L104)
-```rust
-use libffmpeg::ffmpeg::ffmpeg_with_progress;
-use tokio::sync::mpsc;
-use tokio_util::sync::CancellationToken;
+`which()` returns an iterator over all matching `PathBuf`s found across every directory in `$PATH`. Results are canonical absolute paths and are validated to be regular, executable files (on unix).
 
-let (tx, mut rx) = mpsc::channel(100);
-let token = CancellationToken::new();
+## CLI Usage
 
-tokio::spawn(async move {
-    while let Some(duration) = rx.recv().await {
-        println!("Progress: {:?}", duration);
-    }
-});
-
-let result = ffmpeg_with_progress(tx, token, |cmd| {
-    cmd.arg("-i").arg("input.mp4")
-       .arg("output.mp4");
-}).await?;
+```
+which [-s] [-a] [-l LIMIT] <names...>
 ```
 
-### Generic command runner
+| Flag | Description |
+|------|-------------|
+| `-s` | Silent mode - exit 0 if found, 1 otherwise |
+| `-a` | Print all matches, not just the first |
+| `-l` | Limit the number of results |
 
-```rust
-use libffmpeg::util::cmd::run;
-use tokio_util::sync::CancellationToken;
+```bash
+$ which ls
+/bin/ls
 
-let token = CancellationToken::new();
-let result = run("ls", None, token, |cmd| {
-    cmd.arg("-la");
-}).await?;
+$ which -a python3
+/usr/local/bin/python3
+/usr/bin/python3
 ```
 
-## API
+## Features
 
-- `ffmpeg()` - Run ffmpeg with cancellation support
-- `ffmpeg_with_progress()` - Run ffmpeg and receive progress updates via channel
-- `util::cmd::run()` - Generic command runner for any CLI tool
+| Feature | Default | Description |
+|---------|---------|-------------|
+| `libc` | yes | Uses libc for accurate permission checks (superuser-aware) |
+| `tracing` | no | Enables `tracing` instrumentation |
 
-All functions accept a `CancellationToken` for graceful shutdown and a closure to configure the command.
+## Reference
+
+The `which.c` file in the repo root is the original FreeBSD `which(1)` source (BSD-3-Clause) used as a reference for the implementation.
 
 ## License
 
-dont care dont sue me, its 500 lines of wrapper code
+BSD-3-Clause (reference implementation), do what you want with the Rust code.
