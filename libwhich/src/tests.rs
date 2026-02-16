@@ -111,6 +111,44 @@ fn accepts_string_and_str_slices() {
 }
 
 #[test]
+fn does_not_find_directories() {
+    let dir = tempfile::tempdir().expect("failed to create tempdir");
+    let subdir = dir.path().join("looks_like_a_binary");
+    fs::create_dir(&subdir).expect("failed to create subdir");
+
+    let original_path = std::env::var_os("PATH").unwrap();
+    unsafe { std::env::set_var("PATH", dir.path()) };
+
+    let results: Vec<_> = which(&["looks_like_a_binary"])
+        .expect("PATH should be set")
+        .collect();
+
+    unsafe { std::env::set_var("PATH", &original_path) };
+    assert!(results.is_empty(), "directories should not be returned");
+}
+
+#[test]
+fn does_not_find_dangling_symlink() {
+    let dir = tempfile::tempdir().expect("failed to create tempdir");
+    let target = dir.path().join("gone");
+    let link = dir.path().join("dangling");
+    // Create then remove target so the symlink dangles
+    fs::write(&target, "tmp").expect("failed to write");
+    std::os::unix::fs::symlink(&target, &link).expect("failed to symlink");
+    fs::remove_file(&target).expect("failed to remove target");
+
+    let original_path = std::env::var_os("PATH").unwrap();
+    unsafe { std::env::set_var("PATH", dir.path()) };
+
+    let results: Vec<_> = which(&["dangling"])
+        .expect("PATH should be set")
+        .collect();
+
+    unsafe { std::env::set_var("PATH", &original_path) };
+    assert!(results.is_empty(), "dangling symlinks should not be returned");
+}
+
+#[test]
 fn empty_names_returns_empty_iterator() {
     let empty: &[&str] = &[];
     let results: Vec<_> = which(empty).expect("PATH should be set").collect();
