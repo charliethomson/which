@@ -17,9 +17,15 @@ Standards: archetype=library product=which — rules via the `standards` MCP (ht
   not published to the registry, so there is no install manifest, no `cli.release` pipeline
   and no completions. It does not declare a `product_name!`: pulling `libproduct` in for a
   tool this small is not worth the dependency.
-- **No CI.** A library that ships no artifact gets none
-  ([library](https://standards.thmsn.dev/d/archetypes/library)). The gate still exists; it
-  is the commands under Development in [`README.md`](README.md), run locally before a push.
+- **CI is kiln on Woodpecker, push-only.** `.kiln/` is the source; `.woodpecker/` is
+  generated from it and never hand-edited ([ci-cd](https://standards.thmsn.dev/d/ci-cd)).
+  `rust.ci` is libci's template without the coverage job (a library has no floor);
+  `rust.ci-legs` adds the `no-default-features` test and the Windows cross-check. Nothing
+  runs on pull requests: `.kiln/` depends on private kiln and libci, so the repo declares
+  the `ssh_key` checkout key and kiln makes it push-only. What Woodpecker needs set by
+  hand, since the files cannot say it: the repo enabled and marked **trusted** (the jobs
+  mount cache volumes under `/var/lib/woodpecker-cache/which/`), the `ssh_key` secret with
+  `pull_request` off its event list, and "cancel previous pipelines" on for push and manual.
 - **Manifest version is a placeholder.** The workspace `version` in `Cargo.toml` is left
   alone; consumers pin by git ref ([versioning](https://standards.thmsn.dev/d/versioning)).
 - **No `.cargo/config.toml`.** The library never logs an error as a `valuable` field, so it

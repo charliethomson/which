@@ -45,6 +45,7 @@ Properties a caller would otherwise discover the hard way:
 |---|---|
 | [`libwhich/`](libwhich) | The library. `lib.rs` is the search, `util.rs` the per-platform validation, `tests.rs` the inline tests, `examples/readme.rs` the walkthrough below. |
 | [`which/`](which) | The CLI. `build.rs` derives its version from git. |
+| [`.kiln/`](.kiln) | CI as kiln pipelines. [`.woodpecker/`](.woodpecker) is generated from it. |
 | [`scripts/cov.sh`](scripts/cov.sh) | Optional coverage report via `cargo tarpaulin`. |
 | [`which.c`](which.c) | The FreeBSD `which(1)` source (BSD-3-Clause), kept as the reference for the Unix semantics. |
 
@@ -123,22 +124,31 @@ passes directories to `which_in`.
 
 ## Development
 
-There is no CI; this is a library that ships no artifact. These are the gate, run them
-before pushing:
+These are the commands CI runs on every push to `main`; passing them locally means
+passing CI:
 
 ```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo test -p libwhich --no-default-features
-```
-
-The Windows path is cross-checked from anywhere with the target installed:
-
-```sh
 rustup target add x86_64-pc-windows-gnu
 cargo clippy --workspace --all-targets --target x86_64-pc-windows-gnu -- -D warnings
 ```
+
+CI is [kiln](https://github.com/charliethomson/kiln) on Woodpecker and runs only on `main`,
+not on pull requests. The pipelines are Rust in [`.kiln/`](.kiln); the `.woodpecker/*.yml`
+files are generated from them and must not be edited by hand. After changing `.kiln/`,
+regenerate both committed projections and commit them with the change:
+
+```sh
+cargo run --manifest-path .kiln/Cargo.toml -- check
+cargo run --manifest-path .kiln/Cargo.toml -- describe > .kiln/lock.json
+cargo run --manifest-path .kiln/Cargo.toml -- emit woodpecker
+```
+
+kiln and libci are private `ssh://` dependencies, so a local build of `.kiln/` needs an
+ssh key for GitHub and `CARGO_NET_GIT_FETCH_WITH_CLI=true`.
 
 Coverage, if you want a look: `scripts/cov.sh` (needs `cargo tarpaulin`).
 
@@ -159,6 +169,8 @@ Coverage, if you want a look: `scripts/cov.sh` (needs `cargo tarpaulin`).
 - The Windows validation has been cross-compiled and its pure parts are unit-tested, but it
   has not been exercised on a Windows machine yet.
 - The CLI is not published to the registry.
+- CI has not run yet: the repo still has to be enabled in Woodpecker, marked trusted, and
+  given the `ssh_key` secret. See [`AGENTS.md`](AGENTS.md).
 
 ## License
 

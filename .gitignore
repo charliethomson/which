@@ -1,6 +1,8 @@
 target/
 .tmp
+# Workspace lockfile stays out; .kiln/ pins the kiln revision its pipelines were tested against.
 Cargo.lock
+!.kiln/Cargo.lock
 *.mp4
 *.log
 .cov/

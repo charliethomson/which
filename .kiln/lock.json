@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 2,
+  "repo": "which",
+  "checkoutKey": "ssh_key",
+  "stats": {
+    "pipelineCount": 2,
+    "pipelineSourceLines": 92
+  },
+  "pipelines": [
+    {
+      "name": "rust.ci",
+      "description": "fmt · build · clippy · test · contract drift · coverage",
+      "triggers": [
+        {
+          "event": "push",
+          "branches": [
+            "main"
+          ],
+          "paths": [
+            "Cargo.toml",
+            "libwhich/**",
+            "which/**",
+            ".kiln/**"
+          ]
+        },
+        {
+          "event": "manual"
+        }
+      ],
+      "serialize": "cancel",
+      "jobs": [
+        {
+          "name": "build",
+          "agent": "linux",
+          "image": "rust:1-bookworm",
+          "env": {
+            "CARGO_BUILD_JOBS": "2",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_TERM_COLOR": "always",
+            "RELEASE_VERSION": "0.0.0-ci"
+          },
+          "caches": [
+            {
+              "key": "cargo:build",
+              "maxGb": 4,
+              "minFreeGb": 8
+            }
+          ],
+          "secrets": [
+            "ssh_key"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rust.ci-legs",
+      "description": "no-default-features · windows cross-check",
+      "triggers": [
+        {
+          "event": "push",
+          "branches": [
+            "main"
+          ],
+          "paths": [
+            "Cargo.toml",
+            "libwhich/**",
+            "which/**",
+            ".kiln/**"
+          ]
+        },
+        {
+          "event": "manual"
+        }
+      ],
+      "serialize": "cancel",
+      "jobs": [
+        {
+          "name": "legs",
+          "agent": "linux",
+          "image": "rust:1-bookworm",
+          "env": {
+            "CARGO_BUILD_JOBS": "2",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_TERM_COLOR": "always",
+            "RELEASE_VERSION": "0.0.0-ci"
+          },
+          "caches": [
+            {
+              "key": "cargo:legs",
+              "maxGb": 4,
+              "minFreeGb": 8
+            }
+          ],
+          "secrets": [
+            "ssh_key"
+          ],
+          "timeoutMs": 1800000
+        }
+      ]
+    }
+  ]
+}
+
