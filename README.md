@@ -3,11 +3,25 @@
 **Find out which file a program name would run, from Rust or from a shell.**
 
 A Rust workspace with two crates: `libwhich`, a library that locates executables on `PATH`
-the way FreeBSD's `which(1)` does, and `which`, a small CLI over it. The library is the
-point; the CLI is the same lookup with flags. Both work on Unix and Windows.
+the way FreeBSD's `which(1)` does, and `which`, a CLI over it that ships to macOS and
+Windows through the fleet's registry. Both work on Unix and Windows; on Windows the CLI is
+the `which` the OS never had.
 
 Docs: [Versioning](VERSIONING.md) · [Shortcuts](SHORTCUTS.md) · [Agents](AGENTS.md) ·
 [Standards](https://standards.thmsn.dev)
+
+## Install the CLI
+
+```sh
+curl -fsSL https://apps.dev.thmsn.dev/install/dev.thmsn.which | sh
+```
+
+```powershell
+irm https://apps.dev.thmsn.dev/install/dev.thmsn.which.ps1 | iex
+```
+
+The installer picks the build for the machine, verifies its checksum, puts `which` on
+`PATH` and installs shell completions. Re-running it upgrades to whatever is live.
 
 ## How it works
 
@@ -44,12 +58,12 @@ Properties a caller would otherwise discover the hard way:
 | Path | Role |
 |---|---|
 | [`libwhich/`](libwhich) | The library. `lib.rs` is the search, `util.rs` the per-platform validation, `tests.rs` the inline tests, `examples/readme.rs` the walkthrough below. |
-| [`which/`](which) | The CLI. `build.rs` derives its version from git. |
+| [`which/`](which) | The CLI. `build.rs` derives its version from git and embeds build info; `packaging/` holds the registry's install manifest and product metadata. |
 | [`.kiln/`](.kiln) | CI as kiln pipelines. [`.woodpecker/`](.woodpecker) is generated from it. |
 | [`scripts/cov.sh`](scripts/cov.sh) | Optional coverage report via `cargo tarpaulin`. |
 | [`which.c`](which.c) | The FreeBSD `which(1)` source (BSD-3-Clause), kept as the reference for the Unix semantics. |
 
-## Install
+## Install the library
 
 ```toml
 [dependencies]
@@ -87,6 +101,7 @@ returns `PATH` as directories.
 
 ```
 which [-s] [-a] [-l N] [-v] <names>...
+which --completions <shell> | --build-info | --version
 ```
 
 | Flag | Effect |
@@ -95,9 +110,12 @@ which [-s] [-a] [-l N] [-v] <names>...
 | `-l N` | Print at most N matches per name (ignored with `-a`) |
 | `-s` | Print nothing; the exit status is the answer |
 | `-v` | Debug tracing on stderr (`RUST_LOG` narrows it) |
+| `--completions <shell>` | A completion script for bash, zsh, fish, powershell or elvish; the installer runs this |
+| `--build-info` | Version, commit, dirty flag and build host, via `libbuildinfo` |
 | `--version` | The derived version, see [`VERSIONING.md`](VERSIONING.md) |
 
-The exit status is 0 when every name was found and 1 otherwise, like `which(1)`.
+The exit status is 0 when every name was found and 1 otherwise, like `which(1)`. The
+binary identifies itself as `dev.thmsn.which.cli`.
 
 ```sh
 $ cargo run -q -p which -- -a python3
@@ -137,9 +155,12 @@ cargo clippy --workspace --all-targets --target x86_64-pc-windows-gnu -- -D warn
 ```
 
 CI is [kiln](https://github.com/charliethomson/kiln) on Woodpecker and runs only on `main`,
-not on pull requests. The pipelines are Rust in [`.kiln/`](.kiln); the `.woodpecker/*.yml`
-files are generated from them and must not be edited by hand. After changing `.kiln/`,
-regenerate both committed projections and commit them with the change:
+not on pull requests. `rust.ci` runs the gate on Linux; `rust.ci-matrix` runs clippy and
+the tests natively on the Mac and the Windows agent too, since the validation is per
+platform; `cli.release` builds the CLI on each of those two machines, attaches both to one
+registry version and flips it live. The pipelines are Rust in [`.kiln/`](.kiln); the
+`.woodpecker/*.yml` files are generated from them and must not be edited by hand. After
+changing `.kiln/`, regenerate both committed projections and commit them with the change:
 
 ```sh
 cargo run --manifest-path .kiln/Cargo.toml -- check
@@ -163,14 +184,23 @@ Coverage, if you want a look: `scripts/cov.sh` (needs `cargo tarpaulin`).
   called `foo.exe` that is not a program still counts, which is also what `cmd.exe` does.
 - **`--version` is `0.0.<count>` until the repo has a `vMAJOR.MINOR` tag.** See
   [`VERSIONING.md`](VERSIONING.md).
+- **Installing the CLI on macOS or Linux puts a second `which` on `PATH`.** Which one a
+  shell runs depends on where the installer's bin directory sits in `PATH`. The two agree
+  on what they print for a bare name, up to this one resolving symlinks.
+- **A release leg attaches, it never finalizes.** A red `finalize` after green legs means
+  a target is missing from the draft; re-run the failed leg, then `finalize`.
 
 ## Status and known gaps
 
 - The Windows validation has been cross-compiled and its pure parts are unit-tested, but it
   has not been exercised on a Windows machine yet.
-- The CLI is not published to the registry.
-- CI has not run yet: the repo still has to be enabled in Woodpecker, marked trusted, and
-  given the `ssh_key` secret. See [`AGENTS.md`](AGENTS.md).
+- No release has run yet: the repo still has to be enabled in Woodpecker, marked trusted,
+  and given its secrets, and the native agents have to carry their labels. Until the first
+  `cli.release` is green the install one-liners above find nothing. See
+  [`AGENTS.md`](AGENTS.md) for the list.
+- No Linux build is released. The lookup exists there natively; adding one is a line in
+  `.kiln/src/main.rs`.
+- The repo has no `vMAJOR.MINOR` tag yet, so releases version as `0.0.<count>`.
 
 ## License
 

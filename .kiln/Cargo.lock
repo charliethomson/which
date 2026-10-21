@@ -24,6 +24,7 @@ dependencies = [
  "kiln-recipe-git",
  "kiln-recipe-node",
  "kiln-recipe-rust",
+ "kiln-recipe-windows",
 ]
 
 [[package]]
@@ -68,6 +69,14 @@ source = "git+ssh://git@github.com/charliethomson/kiln.git#eaad46731b39af829b81c
 dependencies = [
  "kiln-dsl-core",
  "serde_json",
+]
+
+[[package]]
+name = "kiln-recipe-windows"
+version = "0.0.1"
+source = "git+ssh://git@github.com/charliethomson/kiln.git#eaad46731b39af829b81c27b95989b45a64fe6d8"
+dependencies = [
+ "kiln-dsl-core",
 ]
 
 [[package]]

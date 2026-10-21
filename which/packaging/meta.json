@@ -1,0 +1,5 @@
+{
+  "name": "which",
+  "developerName": "Charlie Thomson",
+  "localizedDescription": "Find out which file a program name would run. which(1) for Windows, and the same lookup on macOS."
+}

@@ -3,8 +3,8 @@
   "repo": "which",
   "checkoutKey": "ssh_key",
   "stats": {
-    "pipelineCount": 2,
-    "pipelineSourceLines": 92
+    "pipelineCount": 3,
+    "pipelineSourceLines": 269
   },
   "pipelines": [
     {
@@ -54,8 +54,8 @@
       ]
     },
     {
-      "name": "rust.ci-legs",
-      "description": "no-default-features · windows cross-check",
+      "name": "rust.ci-matrix",
+      "description": "clippy and tests natively on macOS and Windows; no-default-features on Linux",
       "triggers": [
         {
           "event": "push",
@@ -76,7 +76,7 @@
       "serialize": "cancel",
       "jobs": [
         {
-          "name": "legs",
+          "name": "linux",
           "agent": "linux",
           "image": "rust:1-bookworm",
           "env": {
@@ -88,15 +88,141 @@
           },
           "caches": [
             {
-              "key": "cargo:legs",
+              "key": "cargo:matrix",
               "maxGb": 4,
               "minFreeGb": 8
             }
           ],
-          "secrets": [
-            "ssh_key"
+          "timeoutMs": 1800000
+        },
+        {
+          "name": "macos",
+          "agent": "macos",
+          "env": {
+            "CARGO_BUILD_JOBS": "2",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_TERM_COLOR": "always",
+            "RELEASE_VERSION": "0.0.0-ci"
+          },
+          "caches": [
+            {
+              "key": "cargo:matrix",
+              "maxGb": 4,
+              "minFreeGb": 8
+            }
           ],
           "timeoutMs": 1800000
+        },
+        {
+          "name": "windows",
+          "agent": "windows",
+          "env": {
+            "CARGO_BUILD_JOBS": "2",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_TERM_COLOR": "always",
+            "RELEASE_VERSION": "0.0.0-ci"
+          },
+          "caches": [
+            {
+              "key": "cargo:matrix",
+              "maxGb": 4,
+              "minFreeGb": 8
+            }
+          ],
+          "timeoutMs": 1800000
+        }
+      ]
+    },
+    {
+      "name": "cli.release",
+      "description": "the which binary for macOS and Windows, published as one registry version",
+      "triggers": [
+        {
+          "event": "push",
+          "branches": [
+            "main"
+          ],
+          "paths": [
+            "Cargo.toml",
+            "libwhich/**",
+            "which/**",
+            ".kiln/**"
+          ]
+        },
+        {
+          "event": "manual"
+        }
+      ],
+      "serialize": "finish",
+      "jobs": [
+        {
+          "name": "darwin-arm64",
+          "agent": "macos",
+          "env": {
+            "CARGO_BUILD_JOBS": "2",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_TERM_COLOR": "always"
+          },
+          "caches": [
+            {
+              "key": "cargo:darwin-arm64",
+              "maxGb": 4,
+              "minFreeGb": 8
+            }
+          ],
+          "requires": [
+            "tailnet"
+          ],
+          "secrets": [
+            "registry_repo_token",
+            "registry_token"
+          ],
+          "timeoutMs": 2700000
+        },
+        {
+          "name": "windows-amd64",
+          "agent": "windows",
+          "env": {
+            "CARGO_BUILD_JOBS": "2",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_PROFILE_DEV_DEBUG": "0",
+            "CARGO_TERM_COLOR": "always"
+          },
+          "caches": [
+            {
+              "key": "cargo:windows-amd64",
+              "maxGb": 4,
+              "minFreeGb": 8
+            }
+          ],
+          "requires": [
+            "tailnet"
+          ],
+          "secrets": [
+            "registry_repo_token",
+            "registry_token"
+          ],
+          "timeoutMs": 2700000
+        },
+        {
+          "name": "finalize",
+          "agent": "linux",
+          "image": "rust:1-bookworm",
+          "needs": [
+            "darwin-arm64",
+            "windows-amd64"
+          ],
+          "requires": [
+            "tailnet"
+          ],
+          "secrets": [
+            "registry_repo_token",
+            "registry_token"
+          ],
+          "timeoutMs": 600000
         }
       ]
     }

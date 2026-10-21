@@ -8,15 +8,24 @@
 //   2. Derived from git: `<tag MAJOR>.<tag MINOR>.<commit count>` — for local builds.
 //   3. `0.0.0` fallback.
 //
-// To also embed full build metadata (commit hash, dirty flag, build host/time),
-// add `libbuildinfo` and call `libbuildinfo::emit()` here. See https://standards.thmsn.dev/d/build-info.
+// `libbuildinfo::emit()` embeds the commit hash, dirty flag and build host for
+// `which --build-info`. Without a repository it fails; that is a warning, not an
+// error, and `load_build_info!(optional)` then yields `None`.
+// See https://standards.thmsn.dev/d/build-info.
 
 use std::process::Command;
 
 fn main() {
     // Re-run when HEAD moves or a tag is pushed, so the version stays current.
     println!("cargo:rerun-if-env-changed=RELEASE_VERSION");
+    // The cfg `load_build_info!(optional)` tests for; declared here so its absence is a
+    // known cfg rather than an unexpected one.
+    println!("cargo:rustc-check-cfg=cfg(emitted_buildinfo)");
     emit_git_rerun_paths();
+
+    if let Err(error) = libbuildinfo::emit() {
+        println!("cargo:warning=build info not embedded: {error}");
+    }
 
     let version = std::env::var("RELEASE_VERSION")
         .ok()

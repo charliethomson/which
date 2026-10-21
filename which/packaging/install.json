@@ -1,0 +1,8 @@
+{
+  "version_command": ["--version"],
+  "completions": {
+    "mode": "generated",
+    "command": ["--completions", "{shell}"],
+    "shells": ["bash", "zsh", "fish", "powershell"]
+  }
+}

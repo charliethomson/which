@@ -3,7 +3,7 @@
 #
 # A standalone workspace, like every `.kiln/`: its own lockfile, target dir and feature
 # unification, so editing a pipeline never touches the product build. kiln and libci are
-# private, so both come over ssh and the generated workflow fetches them with the repo's
+# private, so both come over ssh and the generated workflows fetch them with the repo's
 # checkout key (`src/main.rs`).
 [workspace]
 resolver = "3"
@@ -15,5 +15,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
-kiln = { git = "ssh://git@github.com/charliethomson/kiln.git", features = ["rust", "git"] }
-libci = { git = "ssh://git@github.com/charliethomson/libci.git", features = ["templates"] }
+# `windows` for the Git Bash the registry client needs on the Windows agent.
+kiln = { git = "ssh://git@github.com/charliethomson/kiln.git", features = ["rust", "git", "windows"] }
+# `templates` for rust.ci, `registry` for the release.
+libci = { git = "ssh://git@github.com/charliethomson/libci.git", features = ["templates", "registry"] }

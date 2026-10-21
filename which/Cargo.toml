@@ -6,8 +6,13 @@ version.workspace = true
 [dependencies]
 anyhow = "1.0.101"
 clap = { version = "4.5.58", features = ["derive", "env"] }
+clap_complete = "4.5"
+libproduct = { git = "https://github.com/charliethomson/libpath" }
 libwhich = { workspace = true, features = ["tracing"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[build-dependencies]
+libbuildinfo = { git = "https://github.com/charliethomson/libbuildinfo" }
 
 [lints]
 workspace = true

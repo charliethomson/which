@@ -22,7 +22,39 @@ Keep it under ~15 entries. Full convention: [shortcuts](https://standards.thmsn.
 
 ---
 
-_Nothing recorded yet — the next agent to go digging should fix that._
+## How do I install the cli, and does re-running it upgrade?
+
+```sh
+curl -fsSL https://apps.dev.thmsn.dev/install/dev.thmsn.which | sh
+```
+
+```powershell
+irm https://apps.dev.thmsn.dev/install/dev.thmsn.which.ps1 | iex
+```
+
+The registry's installer picks the artifact for the machine, verifies its SHA-256 and
+applies `which/packaging/install.json` (completions). Re-running it installs whatever is
+live, so it is also the upgrade.
+
+_Verified: never. Written from the registry's source; the first release has not run._
+
+## What version of the cli is live, and what did a push turn into?
+
+The registry lists versions per app at `https://apps.dev.thmsn.dev/api/v1/products/dev.thmsn.which/apps/cli`
+(reads need a signed-in session; the API is browsable at `https://apps.dev.thmsn.dev/docs`).
+Compare against local: `git rev-list --count HEAD` is the third component of the
+[version](VERSIONING.md). A push to `main` touching the Rust tree runs `cli.release`; the
+version is live once its `finalize` job is green, so "pushed" is not "installable".
+
+_Verified: never. Written from the registry's source; the first release has not run._
+
+## Is the gate green?
+
+Woodpecker, this repo's pipelines: `rust.ci` (Linux), `rust.ci-matrix` (Linux, macOS,
+Windows) and `cli.release`. Each generated file in [`.woodpecker/`](.woodpecker) is one
+workflow. They run on pushes to `main` and by hand, never on pull requests.
+
+_Verified: never. The repo has not been enabled in Woodpecker yet._
 
 <!--
 Format — one heading per question, phrased the way it actually gets asked:
